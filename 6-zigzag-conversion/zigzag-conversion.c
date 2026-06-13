@@ -33,9 +33,7 @@ char* convert(char* s, int numRows) {
         free(rows[i]);
     }
     result[k] = '\0';
-
     free(rows);
     free(sizes);
-
     return result;
 }
