@@ -1,37 +1,49 @@
+#include <math.h>
+#include <fenv.h>
+
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+
 double findMedianSortedArrays(int* nums1, int nums1Size, int* nums2, int nums2Size) {
-    // Ensure nums1 is the smaller array
-    if (nums1Size > nums2Size)
+    // Ensure nums1 is the smaller array to optimize binary search range O(log(min(m, n)))
+    if (nums1Size > nums2Size) {
         return findMedianSortedArrays(nums2, nums2Size, nums1, nums1Size);
-
-    int x = nums1Size;
-    int y = nums2Size;
-
-    int low = 0, high = x;
-
+    }
+    
+    int m = nums1Size;
+    int n = nums2Size;
+    int low = 0, high = m;
+    
     while (low <= high) {
-        int px = (low + high) / 2;
-        int py = (x + y + 1) / 2 - px;
-
-        int maxLeftX  = (px == 0) ? -2147483648 : nums1[px - 1];
-        int minRightX = (px == x) ?  2147483647 : nums1[px];
-
-        int maxLeftY  = (py == 0) ? -2147483648 : nums2[py - 1];
-        int minRightY = (py == y) ?  2147483647 : nums2[py];
-
+        int partitionX = (low + high) / 2;
+        int partitionY = (m + n + 1) / 2 - partitionX;
+        
+        // If partitionX is 0, it means nothing is on the left side of nums1. Use -INFINITY.
+        // If partitionX is m, it means nothing is on the right side of nums1. Use INFINITY.
+        int maxLeftX = (partitionX == 0) ? -1e7 : nums1[partitionX - 1];
+        int minRightX = (partitionX == m) ? 1e7 : nums1[partitionX];
+        
+        int maxLeftY = (partitionY == 0) ? -1e7 : nums2[partitionY - 1];
+        int minRightY = (partitionY == n) ? 1e7 : nums2[partitionY];
+        
+        // Check if we found the correct partition
         if (maxLeftX <= minRightY && maxLeftY <= minRightX) {
-            // Correct partition found
-            if ((x + y) % 2 == 0) {
-                int leftMax  = (maxLeftX > maxLeftY) ? maxLeftX : maxLeftY;
-                int rightMin = (minRightX < minRightY) ? minRightX : minRightY;
-                return (leftMax + rightMin) / 2.0;
-            } else {
-                return (maxLeftX > maxLeftY) ? maxLeftX : maxLeftY;
+            // If the total number of elements is odd
+            if ((m + n) % 2 != 0) {
+                return (double)MAX(maxLeftX, maxLeftY);
             }
-        } else if (maxLeftX > minRightY) {
-            high = px - 1;   // move left
-        } else {
-            low = px + 1;    // move right
+            // If the total number of elements is even
+            return ((double)MAX(maxLeftX, maxLeftY) + MIN(minRightX, minRightY)) / 2.0;
+        } 
+        else if (maxLeftX > minRightY) {
+            // We are too far right in nums1, move left
+            high = partitionX - 1;
+        } 
+        else {
+            // We are too far left in nums1, move right
+            low = partitionX + 1;
         }
     }
-    return 0.0; // should never reach here
+    
+    return 0.0; // Should never be reached if inputs are sorted
 }
